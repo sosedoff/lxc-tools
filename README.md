@@ -24,10 +24,6 @@ All files will be installed under `/usr/local/bin` on your system.
 
 ## Tools
 
-Set of scripts are written in Ruby, so you'll have to install it on host machine first.
-
-Currently available tools:
-
 - `lxc-setup-network` - Setup and configure bridge interface for containers
 - `lxc-setup-container` - Create and configure a new LXC container
 - `lxc-setup-rootfs` - Create and configure rootfs for containers
