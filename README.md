@@ -6,9 +6,9 @@ Extracted from experimental scripts and currently under development.
 
 ## Requirements
 
-Your host system should have Ruby (1.8/1.9) preinstalled before using any scripts.
-
-Tools are tested on Ubuntu 11.04/11.10 64-bit systems. 
+- Ubuntu 11.04 / 11.10 64-bit system
+- Superuser privileges (required in some scripts)
+- Ruby 1.8.7 / 1.9.x
 
 ## Install
 
