@@ -5,7 +5,7 @@ FILES = [
 ]
 
 task :install do
-  dir = File.dirname(__FILE__)
+  dir = File.join(File.dirname(__FILE__), 'bin')
   target = '/usr/local/bin'
 
   FILES.each do |name|
