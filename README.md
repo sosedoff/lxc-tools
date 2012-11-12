@@ -30,8 +30,9 @@ Currently available tools:
 
 - `lxc-setup-network` - Setup and configure bridge interface for containers
 - `lxc-setup-container` - Create and configure a new LXC container
+- `lxc-setup-rootfs` - Create and configure rootfs for containers
 
-### lxc-setup-network
+## lxc-setup-network
 
 This utility will create a new network interface `br0` for LXC containers. By default,
 this bridge interface will be configured on `192.168.1.x` address space. 
@@ -46,7 +47,7 @@ BRIDGE_IP   = '192.168.1.1' # Bridge address space
 
 Make sure your user has super privileges.
 
-### lxc-setup-rootfs
+## lxc-setup-rootfs
 
 This utility will debootstrap a clean filesystem for LXC containers. Was only tested
 on 64bit ubuntu 11.04/11.10 systems. 
@@ -57,7 +58,7 @@ Execute as:
 lxc-setup-rootfs
 ```
 
-### lxc-setup-container
+## lxc-setup-container
 
 This utility will create and configure a new LXC container. Basic usage:
 
