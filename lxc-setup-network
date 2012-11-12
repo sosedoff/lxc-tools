@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby
+
+BRIDGE_HOST = 'eth0'
+BRIDGE_NAME = 'br0'
+BRIDGE_IP   = '192.168.1.1'
+
+def linux?
+  RUBY_PLATFORM.downcase.include?('linux')
+end
+
+def osx?
+  RUBY_PLATFORM.downcase.include?('darwin')
+end
+
+def configure_bridge
+  `sudo brctl addbr #{BRIDGE_NAME}`
+  `sudo brctl setfd #{BRIDGE_NAME} 0`
+  `sudo ifconfig #{BRIDGE_NAME} #{BRIDGE_IP} up`
+end
+
+def configure_forwarding
+  `sudo iptables -t nat -A POSTROUTING -o #{BRIDGE_HOST} -j MASQUERADE`
+  `sudo sysctl -w net.ipv4.ip_forward=1`
+end
+
+if osx?
+  STDERR.puts "lxc-setup-network is not supported by OSX"
+  exit 1
+end
+
+if !linux?
+  STDERR.puts "lxc-setup-network is not supported by your platform"
+  exit 1
+end
+
+configure_bridge
+configure_forwarding

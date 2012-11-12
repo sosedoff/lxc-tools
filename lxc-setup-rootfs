@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+
+VARIANT     = "minbase"
+COMPONENTS  = "main,universe"
+PACKAGES    = "dialog,apt,apt-utils,aptitude,gpgv,resolvconf,iproute,inetutils-ping,dhcp3-client,ssh,lsb-release,lxcguest"
+UBUNTU      = "natty"
+UBUNTU_ARCH = "amd64"
+DIR         = "/var/cache/debootstrap/$UBUNTU/rootfs-$UBUNTU_ARCH"
+
+unless RUBY_PLATFORM.downcase.include?('linux')
+  STDERR.puts "lxc-setup-rootfs is not supported by your platform"
+  exit 1
+end
+
+# Setup a directory
+`rm -rf #{DIR}`
+`mkdir -p #{DIR}`
+
+# Bootstrap the system
+`debootstrap --verbose \
+            --variant=#{VARIANT} \
+            --components=#{COMPONENTS} \
+            --include=#{PACKAGES} \
+            --arch=#{UBUNTU_ARCH} \
+            #{UBUNTU} \
+            #{DIR}`

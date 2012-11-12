@@ -1,0 +1,235 @@
+#!/usr/bin/env ruby
+require 'optparse'
+require 'fileutils'
+require 'terminal_helpers'
+require 'mustache'
+
+include TerminalHelpers
+
+# ------------------------------------------------------------------------------
+
+TEMPLATE_LXC_CONFIG = <<-EOF
+lxc.utsname = {{ name }}
+lxc.tty = 4
+lxc.pts = 1024
+lxc.rootfs = {{ rootfs }}
+lxc.mount  = {{ mount }}
+lxc.network.type = veth
+lxc.network.flags = up
+lxc.network.name = eth0
+lxc.network.link = br0
+lxc.network.ipv4 = 0.0.0.0
+lxc.cgroup.devices.deny = a
+lxc.cgroup.devices.allow = c 1:3 rwm
+lxc.cgroup.devices.allow = c 1:5 rwm
+lxc.cgroup.devices.allow = c 5:1 rwm
+lxc.cgroup.devices.allow = c 5:0 rwm
+lxc.cgroup.devices.allow = c 4:0 rwm
+lxc.cgroup.devices.allow = c 4:1 rwm
+lxc.cgroup.devices.allow = c 1:9 rwm
+lxc.cgroup.devices.allow = c 1:8 rwm
+lxc.cgroup.devices.allow = c 136:* rwm
+lxc.cgroup.devices.allow = c 5:2 rwm
+lxc.cgroup.devices.allow = c 254:0 rwm
+
+# MEMORY LIMIT
+lxc.cgroup.memory.limit_in_bytes = {{ memory }}
+lxc.cgroup.memory.memsw.limit_in_bytes = {{ memory }}
+EOF
+
+TEMPLATE_FSTAB = <<-EOF
+proc            {{ rootfs }}/proc         proc    nodev,noexec,nosuid 0 0
+devpts          {{ rootfs }}/dev/pts      devpts defaults 0 0
+sysfs           {{ rootfs }}/sys          sysfs defaults  0 0
+EOF
+
+TEMPATE_NET_INTERFACES = <<-EOF
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+address {{ ip }}
+netmask {{ netmask }}
+gateway {{ gateway }}
+EOF
+
+# ------------------------------------------------------------------------------
+
+class Container
+  attr_accessor :name   # Container name
+  attr_accessor :path   # Deploy path
+  attr_accessor :memory # Max memory in bytes
+
+  def initialize(options={})
+    @name   = options[:name]
+    @path   = options[:path]
+    @memory = options[:memory]
+  end
+
+  def rootfs_path(subpath=nil)
+    fullpath = File.join(path, 'rootfs')
+    subpath.nil? ? fullpath : File.join(fullpath, subpath)
+  end
+
+  def setup_rootfs(source_path)
+    `mkdir -p #{path}`
+    `cp -a #{source_path} #{rootfs_path}`
+  end
+
+  def cleanup
+    `rm -rf #{path}` if File.exists?(path)
+  end
+
+  def install_lxc_config
+    data = render_template(TEMPLATE_LXC_CONFIG, {
+      :name   => name,
+      :rootfs => rootfs_path, 
+      :mount  => path,
+      :memory => memory
+    })
+    File.open(File.join(path, 'config'), 'w') { |f| f.write(data) }
+  end
+
+  def install_lxc_fstab
+    data = render_template(TEMPLATE_FSTAB, {:rootfs => rootfs_path})
+    File.open(File.join(path, 'fstab'), 'w') { |f| f.write(data) }
+  end
+
+  def install_net_interfaces_config(options={})
+    data = render_template(TEMPATE_NET_INTERFACES, {
+      :ip      => options[:net_ip],
+      :netmask => options[:net_mask],
+      :gateway => options[:net_gateway]
+    })
+    File.open(rootfs_path('/etc/network/interfaces'), 'w') { |f| f.write(data) }
+  end
+
+  def configure_hostname
+    hostname = name
+    hosts = "127.0.0.1 localhost #{hostname}"
+    resolv = "nameserver 8.8.8.8\nnameserver 8.8.4.4"
+
+    File.open(rootfs_path('/etc/hostname'), 'w')    { |f| f.write(hostname) }
+    File.open(rootfs_path('/etc/hosts'), 'w')       { |f| f.write(hosts) }
+
+    # Setup resolv.conf
+    `rm #{rootfs_path}/etc/resolv.conf`
+    File.open(rootfs_path('/etc/resolv.conf'), 'w') { |f| f.write(resolv) }
+  end
+
+  def configure_ttys
+    `cp #{rootfs_path}/etc/init/tty1.conf #{rootfs_path}/etc/init/console.conf`
+    `rm #{rootfs_path}/etc/init/tty*`
+    `sed -i 's/tty1/console/' #{rootfs_path}/etc/init/console.conf`
+  end
+
+  def configure_root_password
+    `echo "root:root" | chroot #{rootfs_path} chpasswd`
+  end
+
+  def create_container
+    `lxc-create -n #{name} -f #{path}/config`
+  end
+
+  private
+
+  def render_template(tpl, data)
+    Mustache.render(tpl, data)
+  end
+end
+
+# ------------------------------------------------------------------------------
+
+options = {
+  :memory      => 268435456,
+  :net_ip      => '192.168.1.2',
+  :net_gateway => '192.168.1.1',
+  :net_mask    => '255.255.255.0'
+}
+
+optparse = OptionParser.new do |opts|
+  opts.on('-h', '--help', 'Display this information.') do
+    puts(opts)
+    exit
+  end
+
+  opts.on('-n', '--name NAME', 'Container name') do |name|
+    if name =~ /^[a-z\d\_\-]{2,64}$/i
+      options[:name] = name
+    else
+      STDERR.puts "Name should be in format: [A-Za-z0-9\-\_]{2,64}"
+      exit(1)
+    end
+  end
+
+  opts.on('-p', '--path PATH', 'Mount path') do |path|
+    options[:path] = path
+  end
+
+  opts.on('--rootfs PATH', 'Path to clean rootfs') do |path|
+    unless File.exists?(path)
+      STDERR.puts "Path does not exist: #{path}"
+      exit(1)
+    end
+    options[:rootfs_path] = path
+  end
+
+  opts.on('--memory MEGABYTES', 'Memory limit in megabytes') do |v|
+    if v =~ /^([\d]+)$/
+      options[:memory] = Integer(v) * 1024 * 1024
+    else
+      raise OptionParser::InvalidOption, 'shoube ne a number'
+    end
+  end
+
+  # Networking options
+  opts.on('--net-ip IP',      'Assign IP address')    { |v| options[:net_ip] = v }
+  opts.on('--net-gateway IP', 'Container gateway IP') { |v| options[:net_gateway] = v }
+  opts.on('--net-mask MASK',  'Container netmask')    { |v| options[:net_mask] = v }
+end
+
+begin
+  optparse.parse!
+
+  raise OptionParser::MissingArgument if options[:name].nil?
+  raise OptionParser::MissingArgument if options[:path].nil?
+  raise OptionParser::MissingArgument if options[:rootfs_path].nil?
+
+  container = Container.new(
+    :name   => options[:name],
+    :path   => options[:path],
+    :memory => options[:memory]
+  )
+
+  info "Cleaning up container."
+  container.cleanup
+
+  info "Installing rootfs."
+  container.setup_rootfs(options[:rootfs_path])
+
+  info "Installing LXC configuration."
+  container.install_lxc_config
+
+  info "Installing LXC fstab configuration."
+  container.install_lxc_fstab
+
+  info "Configuring network interfaces."
+  container.install_net_interfaces_config(options)
+
+  info "Configuring hostname."
+  container.configure_hostname
+
+  info "Configuring TTYS."
+  container.configure_ttys
+
+  info "Configuring root user."
+  container.configure_root_password
+
+  info "Creating LXC container."
+  container.create_container
+
+rescue OptionParser::InvalidOption, OptionParser::MissingArgument
+  puts optparse
+  exit(1)
+end
