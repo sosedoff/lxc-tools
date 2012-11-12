@@ -1,6 +1,14 @@
 # lxc-tools
 
-Set of tools to work with LXC containers
+Set of tools to work with LXC containers and host system. 
+
+Extracted from experimental scripts and currently under development.
+
+## Requirements
+
+Your host system should have Ruby (1.8/1.9) preinstalled before using any scripts.
+
+Tools are tested on Ubuntu 11.04/11.10 64-bit systems. 
 
 ## Install
 
@@ -79,3 +87,7 @@ Execute as:
 ```
 lxc-setup-container --name app1 --rootfs /path --path /lxc/app1
 ```
+
+## License
+
+See LICENSE file for details
