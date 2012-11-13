@@ -79,6 +79,11 @@ begin
     File.join(options[:path], "#{options[:release]}_#{options[:arch]}")
   ]
 
+  if `which debootstrap`.empty?
+    STDERR.puts "debootstrap utility is not installed"
+    exit 1
+  end
+
   cmd = "debootstrap #{params.join(' ')}"
   puts `#{cmd}`
 rescue OptionParser::InvalidOption, OptionParser::MissingArgument => err
