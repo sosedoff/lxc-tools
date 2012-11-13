@@ -85,7 +85,7 @@ begin
   end
 
   cmd = "debootstrap #{params.join(' ')}"
-  puts `#{cmd}`
+  exec(cmd)
 rescue OptionParser::InvalidOption, OptionParser::MissingArgument => err
   STDERR.puts(err.message)
   exit(1)
