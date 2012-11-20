@@ -33,15 +33,18 @@ All files will be installed under `/usr/local/bin` on your system.
 This utility will create a new network interface `br0` for LXC containers. By default,
 this bridge interface will be configured on `192.168.1.x` address space. 
 
-To change defaults, edit the following lines in the script:
+Usage:
 
-```ruby
-BRIDGE_HOST = 'eth0'        # Host primary interface
-BRIDGE_NAME = 'br0'         # Bridge interface
-BRIDGE_IP   = '192.168.1.1' # Bridge address space
+```
+Usage: lxc-setup-network [options]
+    -h, --help                       Display this information.
+        --host INTERFACE             Host interface name
+        --bridge INTERFACE           Bridge interface name
+        --bridge-ip IP               Bridge interface IP address
 ```
 
-Make sure your user has super privileges.
+Network configuration commands will be executed as sudo so make sure user has
+a proper privileges.
 
 ## lxc-setup-rootfs
 
