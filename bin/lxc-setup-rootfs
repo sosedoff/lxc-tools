@@ -11,6 +11,11 @@ RELEASE_NAMES = {
   '10.04' => 'lucid'
 }
 
+VARIANTS = [
+  'minbase',
+  'buildd'
+]
+
 PACKAGES = [
   'dialog',
   'apt', 
@@ -23,6 +28,12 @@ PACKAGES = [
   'dhcp3-client',
   'ssh',
   'lsb-release',
+  'wget',
+  'automake',
+  'autoconf',
+  'libtool',
+  'curl',
+  'locales',
   'lxcguest'
 ]
 
