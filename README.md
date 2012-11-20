@@ -49,12 +49,17 @@ a proper privileges.
 ## lxc-setup-rootfs
 
 This utility will debootstrap a clean filesystem for LXC containers. Was only tested
-on 64bit ubuntu 11.04/11.10 systems. 
-
-Execute as:
+on 64bit ubuntu 11.04/11.10 systems. Usage:
 
 ```
-lxc-setup-rootfs
+Usage: lxc-setup-rootfs [options]
+    -h, --help                       Display this information.
+        --variant NAME               Bootstrap variant. Default: minbase
+        --components LIST            System components
+        --packages LIST              List of packages to install
+        --release NAME               Release name
+        --arch ARCH                  Release architechture
+        --path PATH                  Extract path
 ```
 
 ## lxc-setup-container
