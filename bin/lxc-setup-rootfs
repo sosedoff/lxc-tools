@@ -11,6 +11,15 @@ RELEASE_NAMES = {
   '10.04' => 'lucid'
 }
 
+def linux?
+  RUBY_PLATFORM.downcase.include?('linux')
+end
+
+def exit_with_message(message)
+  STDERR.puts(message)
+  exit 1
+end
+
 options = {
   :variant    => 'minbase',
   :components => 'main,universe',
@@ -20,28 +29,12 @@ options = {
   :path       => '/var/cache/debootstrap'
 }
 
-unless RUBY_PLATFORM.downcase.include?('linux')
-  STDERR.puts "lxc-setup-rootfs is not supported by your platform"
-  exit 1
-end
-
 optparse = OptionParser.new do |opts|
-  opts.on('-h', '--help', 'Display this information.') do
-    puts(opts)
-    exit
-  end
-
-  opts.on('--variant NAME', 'Bootstrap variant. Default: minbase') do |v|
-    options[:variant] = v
-  end
-
-  opts.on('--components LIST', 'System components') do |v|
-    options[:components] = v
-  end
-
-  opts.on('--packages LIST', 'List of packages to install') do |v|
-    options[:packages] = v.strip.split(',').uniq
-  end
+  opts.on('-h', '--help', 'Display this information.')             { puts(opts) ; exit }
+  opts.on('--path PATH', 'Extract path')                           { |path| options[:path] = path }
+  opts.on('--variant NAME', 'Bootstrap variant. Default: minbase') { |v| options[:variant] = v }
+  opts.on('--components LIST', 'System components')                { |v| options[:components] = v }
+  opts.on('--packages LIST', 'List of packages to install')        { |v| options[:packages] = v.strip.split(',').uniq }
 
   opts.on('--release NAME', 'Release name') do |v|
     if RELEASE_NAMES.include?(v)
@@ -49,7 +42,7 @@ optparse = OptionParser.new do |opts|
     elsif RELEASE_NAMES.values.include?(v)
       options[:release] = v
     else
-      raise OptionParser::InvalidOption, "should be one of: #{RELEASE_NAMES.values.join(', ')}"
+      raise OptionParser::InvalidOption, "should xbe one of: #{RELEASE_NAMES.values.join(', ')}"
     end
   end
 
@@ -60,14 +53,12 @@ optparse = OptionParser.new do |opts|
       raise OptionParser::InvalidOption, "Invalid release arch."
     end
   end
-
-  opts.on('--path PATH', 'Extract path') do |path|
-    options[:path] = path
-  end
 end
 
 begin
   optparse.parse!
+
+  exit_with_message "lxc-setup-rootfs is not supported by your platform" if !linux?
 
   params = [
     "--verbose",
@@ -79,10 +70,7 @@ begin
     File.join(options[:path], "#{options[:release]}_#{options[:arch]}")
   ]
 
-  if `which debootstrap`.empty?
-    STDERR.puts "debootstrap utility is not installed"
-    exit 1
-  end
+  exit_with_message "debootstrap utility is not installed" if `which debootstrap`.empty?
 
   cmd = "debootstrap #{params.join(' ')}"
   exec(cmd)
