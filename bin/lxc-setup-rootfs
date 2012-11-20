@@ -11,6 +11,21 @@ RELEASE_NAMES = {
   '10.04' => 'lucid'
 }
 
+PACKAGES = [
+  'dialog',
+  'apt', 
+  'apt-utils', 
+  'aptitude',
+  'gpgv',
+  'resolvconf',
+  'iproute',
+  'inetutils-ping',
+  'dhcp3-client',
+  'ssh',
+  'lsb-release',
+  'lxcguest'
+]
+
 def linux?
   RUBY_PLATFORM.downcase.include?('linux')
 end
@@ -23,7 +38,7 @@ end
 options = {
   :variant    => 'minbase',
   :components => 'main,universe',
-  :packages   => 'dialog,apt,apt-utils,aptitude,gpgv,resolvconf,iproute,inetutils-ping,dhcp3-client,ssh,lsb-release,lxcguest',
+  :packages   => PACKAGES.join(','),
   :release    => 'natty',
   :arch       => 'amd64',
   :path       => '/var/cache/debootstrap'
@@ -59,6 +74,11 @@ begin
   optparse.parse!
 
   exit_with_message "lxc-setup-rootfs is not supported by your platform" if !linux?
+
+  # lxcguest package was removed from ubuntu 12.x repos
+  if options[:release] >= '12'
+    list = options[:release].split(',').select { |p| p != 'lxcguest' }.join(',')
+  end
 
   params = [
     "--verbose",
