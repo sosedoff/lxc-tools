@@ -16,6 +16,7 @@ def exit_with_message(message)
 end
 
 def configure_bridge(name, ip)
+  puts "Setting up bridge interface #{name} at #{ip}"
   `sudo brctl addbr #{name}`
   `sudo brctl setfd #{name} 0`
   `sudo ifconfig #{name} #{ip} up`
