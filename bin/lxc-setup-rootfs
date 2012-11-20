@@ -73,11 +73,10 @@ end
 begin
   optparse.parse!
 
-  exit_with_message "lxc-setup-rootfs is not supported by your platform" if !linux?
-
   # lxcguest package was removed from ubuntu 12.x repos
-  if options[:release] >= '12' || ['precise', 'quantal'].include?(options[:release])
-    list = options[:release].split(',').select { |p| p != 'lxcguest' }.join(',')
+  if options[:release] =~ /12./ || ['precise', 'quantal'].include?(options[:release])
+    list = options[:packages].split(',').select { |p| p != 'lxcguest' }
+    options[:packages] = list.join(',')
   end
 
   params = [
@@ -90,6 +89,7 @@ begin
     File.join(options[:path], "#{options[:release]}_#{options[:arch]}")
   ]
 
+  exit_with_message "lxc-setup-rootfs is not supported by your platform" if !linux?
   exit_with_message "debootstrap utility is not installed" if `which debootstrap`.empty?
 
   cmd = "debootstrap #{params.join(' ')}"
