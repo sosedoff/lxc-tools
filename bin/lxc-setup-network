@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+require 'optparse'
+
 BRIDGE_HOST = 'eth0'
 BRIDGE_NAME = 'br0'
 BRIDGE_IP   = '192.168.1.1'
@@ -8,30 +10,44 @@ def linux?
   RUBY_PLATFORM.downcase.include?('linux')
 end
 
-def osx?
-  RUBY_PLATFORM.downcase.include?('darwin')
+def exit_with_message(message)
+  STDERR.puts(message)
+  exit 1
 end
 
-def configure_bridge
-  `sudo brctl addbr #{BRIDGE_NAME}`
-  `sudo brctl setfd #{BRIDGE_NAME} 0`
-  `sudo ifconfig #{BRIDGE_NAME} #{BRIDGE_IP} up`
+def configure_bridge(name, ip)
+  `sudo brctl addbr #{name}`
+  `sudo brctl setfd #{name} 0`
+  `sudo ifconfig #{name} #{ip} up`
 end
 
-def configure_forwarding
-  `sudo iptables -t nat -A POSTROUTING -o #{BRIDGE_HOST} -j MASQUERADE`
+def configure_forwarding(host)
+  `sudo iptables -t nat -A POSTROUTING -o #{host} -j MASQUERADE`
   `sudo sysctl -w net.ipv4.ip_forward=1`
 end
 
-if osx?
-  STDERR.puts "lxc-setup-network is not supported by OSX"
-  exit 1
+options = {
+  :host => BRIDGE_HOST,
+  :bridge_name => BRIDGE_NAME,
+  :bridge_ip => BRIDGE_IP
+}
+
+optparse = OptionParser.new do |opts|
+  opts.on('-h', '--help', 'Display this information.')     { puts(opts); exit }
+  opts.on('--host INTERFACE', 'Host interface name')       { |v| options[:host] = v }
+  opts.on('--bridge INTERFACE', 'Bridge interface name')   { |v| options[:bridge_name] = v }
+  opts.on('--bridge-ip IP', 'Bridge interface IP address') { |v| options[:bridge_ip] = v }
 end
 
-if !linux?
-  STDERR.puts "lxc-setup-network is not supported by your platform"
-  exit 1
-end
+begin
+  optparse.parse!
 
-configure_bridge
-configure_forwarding
+  exit_with_message "lxc-setup-network is not supported by your platform" if !linux?
+
+  configure_bridge(options[:bridge_name], options[:bridge_ip])
+  configure_forwarding(options[:host])
+
+rescue OptionParser::InvalidOption, OptionParser::MissingArgument => err
+  STDERR.puts(err.message)
+  exit(1)
+end
