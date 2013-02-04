@@ -69,8 +69,7 @@ class Container
   end
 
   def rootfs_path(subpath=nil)
-    fullpath = File.join(path, 'rootfs')
-    subpath.nil? ? fullpath : File.join(fullpath, subpath)
+    File.join([path, 'rootfs', subpath].compact)
   end
 
   def setup_rootfs(source_path)
