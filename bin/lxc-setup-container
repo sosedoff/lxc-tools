@@ -17,8 +17,8 @@ lxc.rootfs = {{ rootfs }}
 lxc.mount  = {{ mount }}
 lxc.network.type = veth
 lxc.network.flags = up
-lxc.network.name = eth0
-lxc.network.link = br0
+lxc.network.name = {{ net_if }}
+lxc.network.link = {{ net_br }}
 lxc.network.ipv4 = 0.0.0.0
 lxc.cgroup.devices.deny = a
 lxc.cgroup.devices.allow = c 1:3 rwm
@@ -61,11 +61,15 @@ class Container
   attr_accessor :name   # Container name
   attr_accessor :path   # Deploy path
   attr_accessor :memory # Max memory in bytes
+  attr_accessor :net_if # Network interface
+  attr_accessor :net_br # Network bridge interface
 
   def initialize(options={})
     @name   = options[:name]
     @path   = options[:path]
     @memory = options[:memory]
+    @net_if = options[:net_if]
+    @net_br = options[:net_br]
   end
 
   def rootfs_path(subpath=nil)
@@ -86,7 +90,9 @@ class Container
       :name   => name,
       :rootfs => rootfs_path, 
       :mount  => path,
-      :memory => memory
+      :memory => memory,
+      :net_if => net_if,
+      :net_br => net_br
     })
     File.open(File.join(path, 'config'), 'w') { |f| f.write(data) }
   end
@@ -145,7 +151,9 @@ options = {
   :memory      => 268435456,
   :net_ip      => '192.168.1.2',
   :net_gateway => '192.168.1.1',
-  :net_mask    => '255.255.255.0'
+  :net_mask    => '255.255.255.0',
+  :net_if      => 'eth0',
+  :net_br      => 'br0'
 }
 
 optparse = OptionParser.new do |opts|
@@ -187,6 +195,8 @@ optparse = OptionParser.new do |opts|
   opts.on('--net-ip IP',      'Assign IP address')    { |v| options[:net_ip] = v }
   opts.on('--net-gateway IP', 'Container gateway IP') { |v| options[:net_gateway] = v }
   opts.on('--net-mask MASK',  'Container netmask')    { |v| options[:net_mask] = v }
+  opts.on('--net-if NAME',    'Network interface')    { |v| options[:net_if] = v }
+  opts.on('--net-br NAME',    'Network bridge')       { |v| options[:net_br] = v }
 end
 
 begin
@@ -199,7 +209,9 @@ begin
   container = Container.new(
     :name   => options[:name],
     :path   => options[:path],
-    :memory => options[:memory]
+    :memory => options[:memory],
+    :net_if => options[:net_if],
+    :net_br => options[:net_br]
   )
 
   info "Cleaning up container."
