@@ -24,6 +24,8 @@ PACKAGES = [
   'gpgv',
   'resolvconf',
   'iproute',
+  'net-tools',
+  'nano',
   'inetutils-ping',
   'dhcp3-client',
   'ssh',
