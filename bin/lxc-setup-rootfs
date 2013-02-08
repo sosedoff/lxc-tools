@@ -34,7 +34,9 @@ PACKAGES = [
   'libtool',
   'curl',
   'locales',
-  'lxcguest'
+  'lxcguest',
+  'sudo',
+  'wget'
 ]
 
 def linux?
