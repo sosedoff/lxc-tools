@@ -29,7 +29,6 @@ PACKAGES = [
   "inetutils-ping", 
   "iproute", 
   "libtool", 
-  "locales", 
   "lsb-release", 
   "lxcguest", 
   "nano", 
