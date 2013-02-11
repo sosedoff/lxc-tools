@@ -22,6 +22,7 @@ PACKAGES = [
   "aptitude", 
   "autoconf", 
   "automake", 
+  "bsdmainutils", 
   "curl", 
   "dhcp3-client", 
   "dialog", 
