@@ -153,7 +153,7 @@ options = {
   :net_gateway => '192.168.1.1',
   :net_mask    => '255.255.255.0',
   :net_if      => 'eth0',
-  :net_br      => 'br0'
+  :net_br      => 'lxcbr0'
 }
 
 optparse = OptionParser.new do |opts|
