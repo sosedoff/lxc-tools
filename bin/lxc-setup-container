@@ -183,7 +183,7 @@ optparse = OptionParser.new do |opts|
     options[:rootfs_path] = path
   end
 
-  opts.on('--memory MEGABYTES', 'Memory limit in megabytes') do |v|
+  opts.on('--memory MEGABYTES', 'Memory limit in megabytes (512)') do |v|
     if v =~ /^([\d]+)$/
       options[:memory] = Integer(v) * 1024 * 1024
     else
@@ -192,11 +192,11 @@ optparse = OptionParser.new do |opts|
   end
 
   # Networking options
-  opts.on('--net-ip IP',      'Assign IP address')    { |v| options[:net_ip] = v }
-  opts.on('--net-gateway IP', 'Container gateway IP') { |v| options[:net_gateway] = v }
-  opts.on('--net-mask MASK',  'Container netmask')    { |v| options[:net_mask] = v }
-  opts.on('--net-if NAME',    'Network interface')    { |v| options[:net_if] = v }
-  opts.on('--net-br NAME',    'Network bridge')       { |v| options[:net_br] = v }
+  opts.on('--net-ip IP',      'Assign IP address')                 { |v| options[:net_ip] = v }
+  opts.on('--net-gateway IP', 'Container gateway IP')              { |v| options[:net_gateway] = v }
+  opts.on('--net-mask MASK',  'Container netmask (255.255.255.0)') { |v| options[:net_mask] = v }
+  opts.on('--net-if NAME',    'Network interface (eth0)')          { |v| options[:net_if] = v }
+  opts.on('--net-br NAME',    'Network bridge (lxcbr0)')           { |v| options[:net_br] = v }
 end
 
 begin
